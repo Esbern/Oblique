@@ -2,12 +2,12 @@ name: oblique
 channels:
   - conda-forge
 dependencies:
-  - mamba
-  - python=3.11.9  
+  - python=3.10.14
   - jupyterlab
+  - opencv
   - pillow
   - requests
   - piexif
   - tifffile
   - pyproj
-  - python-dotenv
+  - python-dotenv 
