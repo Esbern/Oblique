@@ -1,3 +1,7 @@
+# Downloaded images
+downloaded_images/
+flight_log.JSON
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

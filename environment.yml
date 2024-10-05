@@ -1,0 +1,13 @@
+name: oblique
+channels:
+  - conda-forge
+dependencies:
+  - mamba
+  - python=3.11.9  
+  - jupyterlab
+  - pillow
+  - requests
+  - piexif
+  - tifffile
+  - pyproj
+  - python-dotenv
