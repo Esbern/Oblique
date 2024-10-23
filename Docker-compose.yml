@@ -1,7 +1,14 @@
+
 services:
-  jupyterlab:
-    build: .
+  jupyter:
+    image: onblique
+    build:
+      context: .
     ports:
-      - "8888:8888"
+      - "8888:8888"  # Jupyter port
     volumes:
-      - ./notebooks:/home/jovyan/work
+      - "${PWD}/notebooks:/home/jovyan/notebooks"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes  # Automatically enable JupyterLab
+      - JUPYTER_TOKEN=Innotech
+   

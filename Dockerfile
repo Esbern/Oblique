@@ -1,25 +1,37 @@
-# Use the official Jupyter Docker image as the base image
-FROM jupyter/base-notebook:latest
+FROM quay.io/jupyter/base-notebook
 
-# Install mamba
-RUN conda install mamba -n base -c conda-forge
+# Name your environment and choose the Python version
+ARG env_name=lidar
+ARG py_ver=3.11
 
-# Copy the environment.yml to the container
-COPY environment.yml /tmp/environment.yml
+# Install from the requirements.txt file
+COPY --chown=${NB_UID}:${NB_GID} environment.yml /tmp/
+RUN mamba env create -p "${CONDA_DIR}/envs/${env_name}" -f /tmp/environment.yml && \
+     mamba clean --all -f -y
 
-# Create a new environment using the environment.yml
-RUN mamba env create -f /tmp/environment.yml && \
-    conda clean --all -f -y
+# Copy the .env file to the notebook folder or another suitable location in the container
+COPY --chown=${NB_UID}:${NB_GID} .env /home/${NB_USER}/notebooks/.env
 
-# Activate the environment and ensure Jupyter uses it
-RUN echo "source activate myenv" > ~/.bashrc
-ENV PATH /opt/conda/envs/myenv/bin:$PATH
+# Create Python kernel and link it to jupyter
+RUN "${CONDA_DIR}/envs/${env_name}/bin/python" -m ipykernel install --user --name="${env_name}" && \
+fix-permissions "${CONDA_DIR}" && \
+fix-permissions "/home/${NB_USER}"
 
-# Install ipykernel and link the environment
-RUN /opt/conda/envs/myenv/bin/python -m ipykernel install --user --name myenv --display-name "Python (myenv)"
+# This changes the custom Python kernel so that the custom environment will
+# be activated for the respective Jupyter Notebook and Jupyter Console
+# hadolint ignore=DL3059
+# RUN /opt/setup-scripts/activate_notebook_custom_env.py "${env_name}"
 
-# Expose the port for JupyterLab
-EXPOSE 8888
+# Comment the line above and uncomment the section below instead to activate the custom environment by default
+# Note: uncommenting this section makes "${env_name}" default both for Jupyter Notebook and Terminals
+# More information here: https://github.com/jupyter/docker-stacks/pull/2047
+USER root
+RUN \
+     # This changes a startup hook, which will activate the custom environment for the process
+     echo conda activate "${env_name}" >> /usr/local/bin/before-notebook.d/10activate-conda-env.sh && \
+     # This makes the custom environment default in Jupyter Terminals for all users which might be created later
+     echo conda activate "${env_name}" >> /etc/skel/.bashrc && \
+     # This makes the custom environment default in Jupyter Terminals for already existing NB_USER
+     echo conda activate "${env_name}" >> "/home/${NB_USER}/.bashrc"
 
-# Start JupyterLab by default
-CMD ["start-notebook.sh", "--NotebookApp.token=''"]
+USER ${NB_UID}
